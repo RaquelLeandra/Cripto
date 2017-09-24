@@ -1,5 +1,5 @@
 
-text_path = '/media/raquel/Datos/Documentos/Curso 17-18/C/Codes/Cripto/2017_09_21_17_19_17_raquel.leandra.perez.Escitalo'
+text_path = './2017_09_21_17_19_17_raquel.leandra.perez.Escitalo'
 text = open(text_path, 'r')
 
 text = list(text)[0]
