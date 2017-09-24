@@ -10,13 +10,13 @@ alphabetsize = 26
 def scytale_decrypt(cipher_text, key):
     chars = [c for c in cipher_text]
     result = ''
-    for i in range(1,key):
+    for i in range(0,key):
         for j in range(i,len(chars),key):
             result += chars[j]
     return result
 
 
-for i in range(1, 25):
+for i in [9]:
     result = scytale_decrypt(text, i)
     if 'the' in result:
         resul_path = text_path + 'decrypted' + str(i)

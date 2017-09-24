@@ -19,7 +19,7 @@ def addmay(c, x):
 def decrypt_cesar(text):
     keys = ['the', 'and']
 
-    for i in range(1, alphabetsize):
+    for i in [14]:
         result = ''
         resul_path = text_path + 'decrypted' + str(i)
         resul_file = open(resul_path, mode='w')

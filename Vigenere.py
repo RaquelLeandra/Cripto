@@ -50,3 +50,4 @@ for i in permutations(range(0, 26), 10):
         decrypted_text.close()
 
 key = [3, 8, 12, 4, 13, 18, 8, 14, 13, 18]
+# key = dimensions
