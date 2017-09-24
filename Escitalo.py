@@ -1,5 +1,5 @@
 
-text_path = '/media/raquel/Datos/Documentos/Curso 17-18/C/Codes/Cripto/2017_09_21_17_19_17_raquel.leandra.perez.Vigenere'
+text_path = '/media/raquel/Datos/Documentos/Curso 17-18/C/Codes/Cripto/2017_09_21_17_19_17_raquel.leandra.perez.Escitalo'
 text = open(text_path, 'r')
 
 text = list(text)[0]
@@ -18,7 +18,7 @@ def scytale_decrypt(cipher_text, key):
 
 for i in range(1, 25):
     result = scytale_decrypt(text, i)
-    if 'the' in result and 'and' in result:
+    if 'the' in result:
         resul_path = text_path + 'decrypted' + str(i)
         resul_file = open(resul_path, mode='w')
         print(i)

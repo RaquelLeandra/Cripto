@@ -1,7 +1,7 @@
 import numpy as np
 
 
-text_path = '/media/raquel/Datos/Documentos/Curso 17-18/C/Codes/Cripto/2017_09_21_17_19_17_raquel.leandra.perez.Cesar'
+text_path = './2017_09_21_17_19_17_raquel.leandra.perez.Cesar'
 text = np.loadtxt(text_path, dtype=np.str)
 
 print(text[0:-1])
