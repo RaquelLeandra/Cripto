@@ -103,7 +103,10 @@ print(np.sum(prodtime))
 
 
 class AES:
-    def __init__(self):
+    def __init__(self,bytesub,shiftRow, mixColumn):
+        self.bytesub = bytesub
+        self.shiftRow = shiftRow
+        self.mixColu = mixColumn
         # valid key sizes
         self.keySize = dict(SIZE_128=16, SIZE_192=24, SIZE_256=32)
 
@@ -328,7 +331,10 @@ class AES:
         return [state[i] ^ roundkey[i] for i in range(len(state))]
 
     def ByteSub(self, state):
-        return [self.S[state[i]] for i in range(0, len(state))]
+        if self.bytesub:
+            return [self.S[state[i]] for i in range(0, len(state))]
+        else:
+            return state
 
     def ByteSubInv(self, state):
         return [self.Si[state[i]] for i in range(0, len(state))]
@@ -356,12 +362,15 @@ class AES:
     # iterate over each "virtual" row in the state table and shift the bytes
     # to the LEFT by the appropriate offset
     def ShiftRows(self, state):
-        matrixstate = np.array([state[0:4], state[4:8], state[8:12], state[12:16]]).transpose()
-        newstate = matrixstate
-        for i in range(4):
-            newstate[i, 0:4] = self.rotateWord(matrixstate[i, 0:4], i)
-        newstate = newstate.transpose().reshape(-1)
-        return newstate
+        if not self.shiftRow:
+            return state
+        else:
+            matrixstate = np.array([state[0:4], state[4:8], state[8:12], state[12:16]]).transpose()
+            newstate = matrixstate
+            for i in range(4):
+                newstate[i, 0:4] = self.rotateWord(matrixstate[i, 0:4], i)
+            newstate = newstate.transpose().reshape(-1)
+            return newstate
 
 
     def shiftRowsInv(self, state):
@@ -402,23 +411,25 @@ class AES:
                     g(cpy[1], mult[2]) ^ g(cpy[0], mult[3])
         return column
 
-
     def trasposeState(self,block):
         state = np.array([block[0:4], block[4:8], block[8:12], block[12:16]]).transpose()
         return state.reshape(-1)
+
     # GF product of the 4x4 matrix
     def MixColumns(self, state):
-        # iterate over the 4 columns
-        state = self.trasposeState(state)
-        for i in range(4):
-            # construct one column by slicing over the 4 rows
-            column = state[i:i + 16:4]
-            # apply the mixColumn on one column
-            column = self.mixColumn(column)
-            # put the values back into the state
-            state[i:i + 16:4] = column
-        state = self.trasposeState(state)
-        return state
+        if not self.mixColu:
+            return state
+        else:
+            state = self.trasposeState(state)
+            for i in range(4):
+                # construct one column by slicing over the 4 rows
+                column = state[i:i + 16:4]
+                # apply the mixColumn on one column
+                column = self.mixColumn(column)
+                # put the values back into the state
+                state[i:i + 16:4] = column
+            state = self.trasposeState(state)
+            return state
 
     def mixColumnInv(self, column):
 
@@ -514,7 +525,7 @@ class AES:
         return state
 
     def aesEncrypt(self, plaintext, key):
-        block = self.getBlock(plaintext)
+        block = self.getBlockfromArray(plaintext)
         size = len(key)
         if size == self.keySize["SIZE_128"]:
             nbrRounds = 10
@@ -529,7 +540,7 @@ class AES:
         return block
 
     def aesDecrypt(self, ciphertext, key):
-        block = self.getBlock(ciphertext)
+        block = self.getBlockfromArray(ciphertext)
         size = len(key)
         if size == self.keySize["SIZE_128"]:
             nbrRounds = 10
@@ -543,7 +554,7 @@ class AES:
         block = self.aesInvMain(block, expandedKey,nbrRounds)
         return block
 
-    def getBlock(self, fp):
+    def getBlockfromArray(self, fp):
         raw = fp[0:16]
         # reached end of file
         if len(raw) == 0:
@@ -586,51 +597,59 @@ class AES:
 
             return block
 
-    def testAES(self):
-        simplekey = "Thats my Kung Fu"
-        simpleplaintext = "Two One Nine Two"
-        inputs = simplekey
-        key = [(ord(x)) for x in simplekey]
-        block = [0] * 16
-        size = len(key)
-        if size == self.keySize["SIZE_128"]: nbrRounds = 10
-        else: return None
-        expandedKeySize = 16 * (nbrRounds + 1)
-        expandedKey = self.expandKey(key)
 
-        for i in range(4):
-            # iterate over the rows
-            for j in range(4):
-                block[(i+(j*4))] = ord(inputs[(i*4)+j])
-        print('block0', block)
-        block = self.aesMain(block, expandedKey, nbrRounds)
+def withBytesubId():
+    test = '32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34'
+    test = test.split()
+    M = [int(t, 16) for t in test]
+    key = '2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c'
+    key = key.split()
+    key = [int(k, 16) for k in key]
+    aes2 = AES(False,True,True)
+    C = aes2.aesEncrypt(M, key)
+    print('c', C)
+    for i in [2]:
+        Mi = copy(M)
+        Mi[i] = 3 # randint(0,256)
+        Mij = copy(M)
+        Mij[i] = Mi[i]
+        Ci = aes2.aesEncrypt(Mi,key)
+        for j in [0,5]:
+            Mj = copy(M)
+            Mj[j] = 5 #randint(0, 256)
+            Mij[j] = Mj[j]
+            Cj = aes2.aesEncrypt(Mj, key)
+            Cij = aes2.aesEncrypt(Mij, key)
+            print(i,j, np.array(Ci) ^ np.array(Cj) ^ np.array(Cij))
+
+    print(np.array(M).reshape(4,4))
+    print(np.array(C).reshape(4,4))
 
 
-# gather command line arguments and validate input
 def main():
-    # containers for command line arguments
-    inputfile = None
-    outputfile = None
-    aes = AES()
+    aes = AES(True,True,True)
     test1 = '32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34'
     test2 = '00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff'
-    test3 = 'holi patata patata patata patata '
-    test = test3
-    #test = test.split()
-    #test = [int(t, 16) for t in test]
+    test3 = 'holi patata patata pata'
+    test = test1
+    test = test.split()
+    test = [int(t, 16) for t in test]
     key1 = '2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c'
     key2 = '00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f'
     key = key1
     key = key.split()
     key = [int(k, 16) for k in key]
-    print('aes begin')
-    encrypted = aes.aesEncrypt(test, key)
-    print('encrypted ',[hex(e) for e in encrypted])
-    print('aes decrypt begin ')
-    decrypted = aes.aesDecrypt(encrypted, key)
-    print('dec ', [chr(e) for e in decrypted])
-    print('original' , test)
-    #print('original', [hex(e) for e in test])
+    # print('aes begin')
+    # encrypted = aes.aesEncrypt(test, key)
+    # print('encrypted ',[hex(e) for e in encrypted])
+    # print('aes decrypt begin ')
+    # decrypted = aes.aesDecrypt(encrypted, key)
+    # decryptedstr = ''
+    # for e in decrypted:
+    #     decryptedstr += chr(e)
+    # print('dec ', decrypted)
+    # print('original' , test)
+    withBytesubId()
 
 
 if __name__ == "__main__":
@@ -646,14 +665,3 @@ key = keyObject.read()
 #print([x for x in key],'\n', len(key))
 #print([c for c in cyphertext])
 # Example
-
-simplekey = "Thats my Kung Fu"
-simpleplaintext = "Two One Nine Two"
-
-keykey = [hex(ord(x)) for x in simplekey]
-
-
-"""
-Esto tiene más futuro
-
-"""
