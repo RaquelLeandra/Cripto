@@ -473,14 +473,14 @@ class AES:
 
     def RoundInv(self, state, roundKey):
         state = self.shiftRowsInv(state)
-        print('shiftRows ', [hex(b) for b in state])
+        #print('shiftRows ', [hex(b) for b in state])
         state = self.ByteSubInv(state)
-        print('bytesub ', [hex(b) for b in state])
+        #print('bytesub ', [hex(b) for b in state])
         state = self.addRoundKey(state, roundKey)
-        print('roundKey ', [hex(b) for b in roundKey])
-        print('roundKey add ', [hex(b) for b in state])
+        #print('roundKey ', [hex(b) for b in roundKey])
+        #print('roundKey add ', [hex(b) for b in state])
         state = self.MixColumnsInv(state)
-        print('Mixcolumn ', [hex(b) for b in state])
+        #print('Mixcolumn ', [hex(b) for b in state])
 
         return state
 
@@ -498,15 +498,15 @@ class AES:
         return state
 
     def aesInvMain(self, state, expandedKey, nbrRounds):
-        print('input ', [hex(b) for b in state])
+        #print('input ', [hex(b) for b in state])
         state = self.addRoundKey(state,
                                  self.createRoundKey(expandedKey, 16*nbrRounds))
-        print('round1 start ', [hex(b) for b in state])
+        #print('round1 start ', [hex(b) for b in state])
         i = nbrRounds - 1
         while i > 0:
             state = self.RoundInv(state,
                                       (self.createRoundKey(expandedKey, 16*i)))
-            print('round start', i + 1, '\n', [hex(b) for b in state])
+            #print('round start', i + 1, '\n', [hex(b) for b in state])
             i -= 1
         state = self.ByteSubInv(state)
         state = self.shiftRowsInv(state)
@@ -539,7 +539,6 @@ class AES:
             nbrRounds = 14
         else:
             return None
-        print('decrpyt block ', [hex(e) for e in block])
         expandedKey = self.expandKey(key)
         block = self.aesInvMain(block, expandedKey,nbrRounds)
         return block
@@ -615,12 +614,13 @@ def main():
     aes = AES()
     test1 = '32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34'
     test2 = '00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff'
-    test = test2
-    test = test.split()
-    test = [int(t, 16) for t in test]
+    test3 = 'holi patata patata patata patata '
+    test = test3
+    #test = test.split()
+    #test = [int(t, 16) for t in test]
     key1 = '2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c'
     key2 = '00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f'
-    key = key2
+    key = key1
     key = key.split()
     key = [int(k, 16) for k in key]
     print('aes begin')
@@ -628,8 +628,9 @@ def main():
     print('encrypted ',[hex(e) for e in encrypted])
     print('aes decrypt begin ')
     decrypted = aes.aesDecrypt(encrypted, key)
-    print('dec ', [hex(e) for e in decrypted])
-    print('original', [hex(e) for e in test])
+    print('dec ', [chr(e) for e in decrypted])
+    print('original' , test)
+    #print('original', [hex(e) for e in test])
 
 
 if __name__ == "__main__":
