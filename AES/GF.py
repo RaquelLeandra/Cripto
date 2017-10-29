@@ -256,6 +256,60 @@ class AES:
 
         return expandedKey
 
+    def expandKeyInv(self, key):
+        """Rijndael's key expansion.
+
+        Expands an 128,192,256 key into an 176,208,240 bytes key
+
+        expandedKey is a char list of large enough size,
+        key is the non-expanded key.
+        """
+        size = len(key)
+        if size == self.keySize["SIZE_128"]:
+            nbrRounds = 10
+        elif size == self.keySize["SIZE_192"]:
+            nbrRounds = 12
+        elif size == self.keySize["SIZE_256"]:
+            nbrRounds = 14
+        else:
+            return None
+
+        expandedKeySize = 16 * (nbrRounds + 1)
+        # current expanded keySize, in bytes
+        currentSize = 0
+        rconIteration = 1
+        expandedKey = [0] * expandedKeySize
+
+        # set the 16, 24, 32 bytes of the expanded key to the input key
+        for j in range(size):
+            expandedKey[j] = key[j]
+        currentSize += size
+
+        while currentSize < expandedKeySize:
+            # assign the previous 4 bytes to the temporary value t
+            t = expandedKey[currentSize-4:currentSize]
+
+            # every 16,24,32 bytes we apply the core schedule to t
+            # and increment rconIteration afterwards
+            if currentSize % size == 0:
+                t = self.core(t, rconIteration)
+                rconIteration += 1
+            # For 256-bit keys, we add an extra sbox to the calculation
+            if size == self.keySize["SIZE_256"] and ((currentSize % size) == 16):
+                for l in range(4): t[l] = self.S[t[l]]
+
+            # We XOR t with the four-byte block 16,24,32 bytes before the new
+            # expanded key.  This becomes the next four bytes in the expanded
+            # key.
+            for m in range(4):
+                expandedKey[currentSize] = expandedKey[currentSize - size] ^ \
+                        t[m]
+                currentSize += 1
+            dw = expandedKey
+            for i in range(1,nbrRounds - 1):
+                expandedKey = self.mixColumnInv(dw[i*16: (i+1)*16 - 1])
+        return expandedKey
+
     def createRoundKey(self, expandedKey, roundKeyPointer):
         """Create a round key.
         Creates a round key from the given expanded key and the
@@ -267,6 +321,7 @@ class AES:
                 roundKey[i*4+j] = expandedKey[roundKeyPointer + i*4 + j]
         #print('rouundkey' , roundKeyPointer/16, [hex(k) for k in roundKey])
         return roundKey
+
 
     def addRoundKey(self, state, roundkey):
         """Adds the round key to the state"""
@@ -308,17 +363,14 @@ class AES:
         newstate = newstate.transpose().reshape(-1)
         return newstate
 
-    def shiftRowInv(self, state, statePointer, nbr):
-        for i in range(nbr):
-            state[statePointer:statePointer+4] = \
-                    state[statePointer+3:statePointer+4] + \
-                    state[statePointer:statePointer+3]
-        return state
 
     def shiftRowsInv(self, state):
+        matrixstate = np.array([state[0:4], state[4:8], state[8:12], state[12:16]]).transpose()
+        newstate = matrixstate
         for i in range(4):
-            state = self.shiftRowInv(state, i * 4, i)
-        return state
+            newstate[i, 0:4] = self.rotateWord(matrixstate[i, 0:4], 4 - i)
+        newstate = newstate.transpose().reshape(-1)
+        return newstate
 
     def galois_multiplication(self, a, b):
         """Galois multiplication of 8 bit characters a and b."""
@@ -387,14 +439,16 @@ class AES:
 
     def MixColumnsInv(self, state):
         # iterate over the 4 columns
+        state = self.trasposeState(state)
         for i in range(4):
             # construct one column by slicing over the 4 rows
             column = state[i:i+16:4]
             # apply the mixColumn on one column
-            column = self.mixColumn(column)
+            column = self.mixColumnInv\
+                (column)
             # put the values back into the state
             state[i:i+16:4] = column
-
+        state = self.trasposeState(state)
         return state
 
     def FinalRound(self, state, expandedKey,nbrRounds):
@@ -407,43 +461,52 @@ class AES:
     def Round(self, state, roundkey):
         state = self.ByteSub(state)
         matrixstate = np.array([state[0:4], state[4:8], state[8:12], state[12:16]]).transpose()
-        print('bytesub ',  [hex(b) for b in state])
+        #print('bytesub ',  [hex(b) for b in state])
         vhex = np.vectorize(hex)
         #print(vhex(matrixstate))
         state = self.ShiftRows(state)
-        print('shiftRows ', [hex(b) for b in state])
+        #print('shiftRows ', [hex(b) for b in state])
         state = self.MixColumns(state)
-        print('MixColumns ', [hex(b) for b in state])
+        #print('MixColumns ', [hex(b) for b in state])
         state = self.addRoundKey(state, roundkey)
         return state
 
     def RoundInv(self, state, roundKey):
-        state = self.ByteSubInv(state)
         state = self.shiftRowsInv(state)
-        state = self.MixColumnsInv(state)
+        print('shiftRows ', [hex(b) for b in state])
+        state = self.ByteSubInv(state)
+        print('bytesub ', [hex(b) for b in state])
         state = self.addRoundKey(state, roundKey)
+        print('roundKey ', [hex(b) for b in roundKey])
+        print('roundKey add ', [hex(b) for b in state])
+        state = self.MixColumnsInv(state)
+        print('Mixcolumn ', [hex(b) for b in state])
+
         return state
 
     def aesMain(self, state, expandedKey, nbrRounds):
-        print('input ', [hex(b) for b in state])
+        #print('input ', [hex(b) for b in state])
         state = self.addRoundKey(state, self.createRoundKey(expandedKey, 0))
-        print('round1 start ', [hex(b) for b in state])
+        #print('round1 start ', [hex(b) for b in state])
         i = 1
         for i in range(1,nbrRounds):
             state = self.Round(state,
                                    self.createRoundKey(expandedKey, 16*i))
             matrixstate = np.matrix([state[0:4], state[4:8], state[8:12], state[12:16]])
-            print('round start', i + 1 , '\n', [hex(b) for b in state])
+            #print('round start', i + 1 , '\n', [hex(b) for b in state])
         state = self.FinalRound(state, expandedKey, nbrRounds)
         return state
 
     def aesInvMain(self, state, expandedKey, nbrRounds):
+        print('input ', [hex(b) for b in state])
         state = self.addRoundKey(state,
                                  self.createRoundKey(expandedKey, 16*nbrRounds))
+        print('round1 start ', [hex(b) for b in state])
         i = nbrRounds - 1
         while i > 0:
             state = self.RoundInv(state,
-                                      self.mixColumnInv(self.createRoundKey(expandedKey, 16*i)))
+                                      (self.createRoundKey(expandedKey, 16*i)))
+            print('round start', i + 1, '\n', [hex(b) for b in state])
             i -= 1
         state = self.ByteSubInv(state)
         state = self.shiftRowsInv(state)
