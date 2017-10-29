@@ -285,7 +285,6 @@ def passwordToKey(password):
     key = []
     for c in list(sha256.digest()):
         key.append(ord(c))
-    key = [204, 80, 91, 243, 14, 166, 160, 0, 168, 175, 250, 245, 171, 173, 127, 88, 107, 91, 180, 150, 135, 124, 134, 26]
     return key
 
 
