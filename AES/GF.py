@@ -103,7 +103,7 @@ print(np.sum(prodtime))
 
 
 class AES:
-    def __init__(self,bytesub,shiftRow, mixColumn):
+    def __init__(self, bytesub, shiftRow, mixColumn):
         self.bytesub = bytesub
         self.shiftRow = shiftRow
         self.mixColu = mixColumn
@@ -185,7 +185,7 @@ class AES:
             0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63,
             0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd,
             0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d
-            ]
+        ]
 
     def rotate(self, word):
         """ Rijndael's key schedule rotate operation.
@@ -238,7 +238,7 @@ class AES:
 
         while currentSize < expandedKeySize:
             # assign the previous 4 bytes to the temporary value t
-            t = expandedKey[currentSize-4:currentSize]
+            t = expandedKey[currentSize - 4:currentSize]
 
             # every 16,24,32 bytes we apply the core schedule to t
             # and increment rconIteration afterwards
@@ -254,7 +254,7 @@ class AES:
             # key.
             for m in range(4):
                 expandedKey[currentSize] = expandedKey[currentSize - size] ^ \
-                        t[m]
+                                           t[m]
                 currentSize += 1
 
         return expandedKey
@@ -290,7 +290,7 @@ class AES:
 
         while currentSize < expandedKeySize:
             # assign the previous 4 bytes to the temporary value t
-            t = expandedKey[currentSize-4:currentSize]
+            t = expandedKey[currentSize - 4:currentSize]
 
             # every 16,24,32 bytes we apply the core schedule to t
             # and increment rconIteration afterwards
@@ -306,11 +306,11 @@ class AES:
             # key.
             for m in range(4):
                 expandedKey[currentSize] = expandedKey[currentSize - size] ^ \
-                        t[m]
+                                           t[m]
                 currentSize += 1
             dw = expandedKey
-            for i in range(1,nbrRounds - 1):
-                expandedKey = self.mixColumnInv(dw[i*16: (i+1)*16 - 1])
+            for i in range(1, nbrRounds - 1):
+                expandedKey = self.mixColumnInv(dw[i * 16: (i + 1) * 16 - 1])
         return expandedKey
 
     def createRoundKey(self, expandedKey, roundKeyPointer):
@@ -321,10 +321,9 @@ class AES:
         roundKey = [0] * 16
         for i in range(4):
             for j in range(4):
-                roundKey[i*4+j] = expandedKey[roundKeyPointer + i*4 + j]
-        #print('rouundkey' , roundKeyPointer/16, [hex(k) for k in roundKey])
+                roundKey[i * 4 + j] = expandedKey[roundKeyPointer + i * 4 + j]
+        # print('rouundkey' , roundKeyPointer/16, [hex(k) for k in roundKey])
         return roundKey
-
 
     def addRoundKey(self, state, roundkey):
         """Adds the round key to the state"""
@@ -353,9 +352,9 @@ class AES:
 
     def rotateWord(self, word, n):
         newpotato = []
-        for i in range(n,4):
+        for i in range(n, 4):
             newpotato.append(word[i])
-        for i in range(0,n):
+        for i in range(0, n):
             newpotato.append(word[i])
         return newpotato
 
@@ -371,7 +370,6 @@ class AES:
                 newstate[i, 0:4] = self.rotateWord(matrixstate[i, 0:4], i)
             newstate = newstate.transpose().reshape(-1)
             return newstate
-
 
     def shiftRowsInv(self, state):
         matrixstate = np.array([state[0:4], state[4:8], state[8:12], state[12:16]]).transpose()
@@ -411,7 +409,7 @@ class AES:
                     g(cpy[1], mult[2]) ^ g(cpy[0], mult[3])
         return column
 
-    def trasposeState(self,block):
+    def trasposeState(self, block):
         state = np.array([block[0:4], block[4:8], block[8:12], block[12:16]]).transpose()
         return state.reshape(-1)
 
@@ -453,16 +451,16 @@ class AES:
         state = self.trasposeState(state)
         for i in range(4):
             # construct one column by slicing over the 4 rows
-            column = state[i:i+16:4]
+            column = state[i:i + 16:4]
             # apply the mixColumn on one column
-            column = self.mixColumnInv\
+            column = self.mixColumnInv \
                 (column)
             # put the values back into the state
-            state[i:i+16:4] = column
+            state[i:i + 16:4] = column
         state = self.trasposeState(state)
         return state
 
-    def FinalRound(self, state, expandedKey,nbrRounds):
+    def FinalRound(self, state, expandedKey, nbrRounds):
         state = self.ByteSub(state)
         state = self.ShiftRows(state)
         state = self.addRoundKey(state,
@@ -472,52 +470,52 @@ class AES:
     def Round(self, state, roundkey):
         state = self.ByteSub(state)
         matrixstate = np.array([state[0:4], state[4:8], state[8:12], state[12:16]]).transpose()
-        #print('bytesub ',  [hex(b) for b in state])
+        # print('bytesub ',  [hex(b) for b in state])
         vhex = np.vectorize(hex)
-        #print(vhex(matrixstate))
+        # print(vhex(matrixstate))
         state = self.ShiftRows(state)
-        #print('shiftRows ', [hex(b) for b in state])
+        # print('shiftRows ', [hex(b) for b in state])
         state = self.MixColumns(state)
-        #print('MixColumns ', [hex(b) for b in state])
+        # print('MixColumns ', [hex(b) for b in state])
         state = self.addRoundKey(state, roundkey)
         return state
 
     def RoundInv(self, state, roundKey):
         state = self.shiftRowsInv(state)
-        #print('shiftRows ', [hex(b) for b in state])
+        # print('shiftRows ', [hex(b) for b in state])
         state = self.ByteSubInv(state)
-        #print('bytesub ', [hex(b) for b in state])
+        # print('bytesub ', [hex(b) for b in state])
         state = self.addRoundKey(state, roundKey)
-        #print('roundKey ', [hex(b) for b in roundKey])
-        #print('roundKey add ', [hex(b) for b in state])
+        # print('roundKey ', [hex(b) for b in roundKey])
+        # print('roundKey add ', [hex(b) for b in state])
         state = self.MixColumnsInv(state)
-        #print('Mixcolumn ', [hex(b) for b in state])
+        # print('Mixcolumn ', [hex(b) for b in state])
 
         return state
 
     def aesMain(self, state, expandedKey, nbrRounds):
-        #print('input ', [hex(b) for b in state])
+        # print('input ', [hex(b) for b in state])
         state = self.addRoundKey(state, self.createRoundKey(expandedKey, 0))
-        #print('round1 start ', [hex(b) for b in state])
+        # print('round1 start ', [hex(b) for b in state])
         i = 1
-        for i in range(1,nbrRounds):
+        for i in range(1, nbrRounds):
             state = self.Round(state,
-                                   self.createRoundKey(expandedKey, 16*i))
+                               self.createRoundKey(expandedKey, 16 * i))
             matrixstate = np.matrix([state[0:4], state[4:8], state[8:12], state[12:16]])
-            #print('round start', i + 1 , '\n', [hex(b) for b in state])
+            # print('round start', i + 1 , '\n', [hex(b) for b in state])
         state = self.FinalRound(state, expandedKey, nbrRounds)
         return state
 
     def aesInvMain(self, state, expandedKey, nbrRounds):
-        #print('input ', [hex(b) for b in state])
+        # print('input ', [hex(b) for b in state])
         state = self.addRoundKey(state,
-                                 self.createRoundKey(expandedKey, 16*nbrRounds))
-        #print('round1 start ', [hex(b) for b in state])
+                                 self.createRoundKey(expandedKey, 16 * nbrRounds))
+        # print('round1 start ', [hex(b) for b in state])
         i = nbrRounds - 1
         while i > 0:
             state = self.RoundInv(state,
-                                      (self.createRoundKey(expandedKey, 16*i)))
-            #print('round start', i + 1, '\n', [hex(b) for b in state])
+                                  (self.createRoundKey(expandedKey, 16 * i)))
+            # print('round start', i + 1, '\n', [hex(b) for b in state])
             i -= 1
         state = self.ByteSubInv(state)
         state = self.shiftRowsInv(state)
@@ -551,7 +549,7 @@ class AES:
         else:
             return None
         expandedKey = self.expandKey(key)
-        block = self.aesInvMain(block, expandedKey,nbrRounds)
+        block = self.aesInvMain(block, expandedKey, nbrRounds)
         return block
 
     def getBlockfromArray(self, fp):
@@ -598,36 +596,130 @@ class AES:
             return block
 
 
-def withBytesubId():
+def changingBytesub():
     test = '32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34'
     test = test.split()
     M = [int(t, 16) for t in test]
     key = '2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c'
     key = key.split()
     key = [int(k, 16) for k in key]
-    aes2 = AES(False,True,True)
+    aes2 = AES(False, True, True)
     C = aes2.aesEncrypt(M, key)
-    print('c', C)
-    for i in [2]:
+    cont = 0
+    for i in range(0, 16):
         Mi = copy(M)
-        Mi[i] = 3 # randint(0,256)
-        Mij = copy(M)
-        Mij[i] = Mi[i]
-        Ci = aes2.aesEncrypt(Mi,key)
-        for j in [0,5]:
+        Mi[i] = randint(0, 256)
+        Ci = aes2.aesEncrypt(Mi, key)
+        for j in range(0, 16):
+            if i == j:
+                continue
             Mj = copy(M)
-            Mj[j] = 5 #randint(0, 256)
+            Mij = copy(M)
+            Mij[i] = Mi[i]
+            Mj[j] = randint(0, 256)
             Mij[j] = Mj[j]
             Cj = aes2.aesEncrypt(Mj, key)
             Cij = aes2.aesEncrypt(Mij, key)
-            print(i,j, np.array(Ci) ^ np.array(Cj) ^ np.array(Cij))
+            cont += (np.sum(C == np.array(Ci) ^ np.array(Cj) ^ np.array(Cij)) == 16)
+    if cont == 240:
+        print('Para todas las permutaciones de i, j da el mismo valor')
+    aes3 = AES(True, True, True)
+    C = aes3.aesEncrypt(M, key)
+    cont = 0
+    for i in range(0, 16):
+        Mi = copy(M)
+        Mi[i] = randint(0, 256)
+        Ci = aes2.aesEncrypt(Mi, key)
+        for j in range(0, 16):
+            if i == j:
+                continue
+            Mj = copy(M)
+            Mij = copy(M)
+            Mij[i] = Mi[i]
+            Mj[j] = randint(0, 256)
+            Mij[j] = Mj[j]
+            Cj = aes2.aesEncrypt(Mj, key)
+            Cij = aes2.aesEncrypt(Mij, key)
+            cont += (np.sum(C == np.array(Ci) ^ np.array(Cj) ^ np.array(Cij)) == 16)
 
-    print(np.array(M).reshape(4,4))
-    print(np.array(C).reshape(4,4))
+    if cont != 250:
+        print('No tira', cont)
+
+        # print(np.array(M).reshape(4,4))
+        # print(np.array(C).reshape(4,4))
+
+
+def changingShiftRows():
+    key = '2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c'
+    key = key.split()
+    key = [int(k, 16) for k in key]
+    aesMod = AES(True, False, True)
+
+    for n in range(5):
+        print('Ronda', n)
+        M = [randint(0, 255) for t in range(0, 16)]
+        C = aesMod.aesEncrypt(M, key)
+        print('C', C)
+        for i in range(0, 16):
+            Mi = copy(M)
+            Mi[i] = randint(0, 16)
+            Ci = aesMod.aesEncrypt(Mi, key)
+            print('Ci', Ci)
+
+
+def changingMixColumns():
+    key = '2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c'
+    key = key.split()
+    key = [int(k, 16) for k in key]
+    aesMod = AES(True, True, False)
+
+    for n in range(5):
+        print('Ronda', n)
+        M = [randint(0, 255) for t in range(0, 16)]
+        C = aesMod.aesEncrypt(M, key)
+        print('C', C)
+        for i in range(0, 16):
+            Mi = copy(M)
+            Mi[i] = randint(0, 16)
+            Ci = aesMod.aesEncrypt(Mi, key)
+            print('Ci', Ci)
+
+
+def changeonebit(M):
+    newM = copy(M)
+    i = randint(0, 15)
+    j = randint(2, len(M(i)))
+    bit = M[i][j]
+    if bit:
+        newM[i][j] = 0
+    else:
+        newM[i][j] = 1
+    return newM
+
+
+def littleChanges():
+    aesMod = AES(True, True, True)
+    key = [randint(0, 255) for t in range(0, 16)]
+    M = [(randint(0, 255)) for t in range(0, 16)]
+    binM = [bin(randint(0, 255)) for t in range(0, 16)]
+    C = aesMod.aesEncrypt(M, key)
+    binM = []
+    for t in M:
+        bits = np.unpackbits(np.uint8(t))
+        # for b in bits:
+        binM.append(bits)
+    print(binM)
+    changes = {}
+    for i in range(0, 128):
+        Mi = changeonebit(binM)
+
+    print(M)
+
+    M = [int(t, 2) for t in binM]
 
 
 def main():
-    aes = AES(True,True,True)
+    aes = AES(True, True, True)
     test1 = '32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34'
     test2 = '00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff'
     test3 = 'holi patata patata pata'
@@ -649,19 +741,18 @@ def main():
     #     decryptedstr += chr(e)
     # print('dec ', decrypted)
     # print('original' , test)
-    withBytesubId()
+    # changingBytesub()
+    # changingMixColumns()
+    littleChanges()
 
 
 if __name__ == "__main__":
     main()
 
-
-
-
 cyphertextObject = open("./Data/2017_09_26_13_22_56_raquel.leandra.perez.enc", 'rb')
 cyphertext = cyphertextObject.read()
 keyObject = open("./Data/2017_09_26_13_22_56_raquel.leandra.perez.key", 'rb')
 key = keyObject.read()
-#print([x for x in key],'\n', len(key))
-#print([c for c in cyphertext])
+# print([x for x in key],'\n', len(key))
+# print([c for c in cyphertext])
 # Example
