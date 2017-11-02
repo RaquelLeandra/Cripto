@@ -3,6 +3,10 @@ from time import time
 from copy import copy
 import sys, hashlib, string, getpass
 from random import randint
+import os
+from Crypto.Cipher import AES as aes
+
+from matplotlib import pyplot as plt
 
 base = 256
 # El polinimo mínimo, en int es 283
@@ -654,7 +658,6 @@ def changingShiftRows():
     key = key.split()
     key = [int(k, 16) for k in key]
     aesMod = AES(True, False, True)
-
     for n in range(5):
         print('Ronda', n)
         M = [randint(0, 255) for t in range(0, 16)]
@@ -685,37 +688,41 @@ def changingMixColumns():
             print('Ci', Ci)
 
 
-def changeonebit(M):
+def changeonebit(M,i):
     newM = copy(M)
-    i = randint(0, 15)
-    j = randint(2, len(M(i)))
-    bit = M[i][j]
-    if bit:
-        newM[i][j] = 0
-    else:
-        newM[i][j] = 1
+    while newM[i] == M[i]:
+        newM[i] = randint(0,255)
     return newM
 
+def count_changes(Ci, C):
+    c = 0
+    for i in range(0,len(C)):
+        if C[i] != Ci[i]:
+            c += 1
+    return c
 
 def littleChanges():
-    aesMod = AES(True, True, True)
-    key = [randint(0, 255) for t in range(0, 16)]
-    M = [(randint(0, 255)) for t in range(0, 16)]
-    binM = [bin(randint(0, 255)) for t in range(0, 16)]
-    C = aesMod.aesEncrypt(M, key)
-    binM = []
-    for t in M:
-        bits = np.unpackbits(np.uint8(t))
-        # for b in bits:
-        binM.append(bits)
-    print(binM)
+    """
+    La idea de este código es crear un mensaje te tamaño 128 y hacer una estadística de que pasa
+    en el mensaje encriptado si cambiamos un bit.
+    :return:
+    """
+
+    key = bytes([randint(0, 255) for t in range(0, 16)])
+    IV = os.urandom(16)
+    cipher = AES(True,True,True)
+    originalAES = aes.new(key,aes.MODE_CBC, IV)
+    M = [randint(0, 255) for t in range(0, 128)]
+    C = originalAES.encrypt(bytes(M))
     changes = {}
-    for i in range(0, 128):
-        Mi = changeonebit(binM)
+    Mi = changeonebit(M,0)
+    for i in range(1, len(M)):
+        Mi = changeonebit(Mi,i)
+        Ci = originalAES.encrypt(bytes(Mi))
+        changes[i] = count_changes(C,Ci)
+    plt.bar(list(changes.keys()), changes.values())
+    plt.show()
 
-    print(M)
-
-    M = [int(t, 2) for t in binM]
 
 
 def main():
