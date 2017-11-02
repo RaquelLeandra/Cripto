@@ -78,10 +78,8 @@ def yoloaes_decrypt( kiv):
     with magic.Magic() as m:
         t = m.id_filename('./Data/goodfile.dec')
     if t != 'data':
-        print(decrypted[-1])
-        if decrypted[-1] <= 16:
-            decrypted = decode(decrypted)
-            g = open('./Data/Decrypted/goodfile'+ str(kiv)+'.dec', 'wb').write(decrypted)
+        decrypted = decode(decrypted)
+        g = open('./Data/Decrypted/goodfile'+ str(kiv)+'.dec', 'wb').write(decrypted)
     return decrypted
 
 dec = yoloaes_encrpyt()
@@ -99,17 +97,15 @@ def conditions(t,text):
     return True
 
 #
-while conditions(t, dec):
-    kiv = (os.urandom(2))
-    dec = yoloaes_decrypt(kiv)
-    with magic.Magic() as m:
-        t = m.id_filename('./Data/goodfile.dec')
-    if t != 'data':
-        print(t, kiv)
-    if count %1000 == 0:
-        print(count)
-    count +=1
+for i in range(0,255):
+    for j in range(0,255):
+        kiv = bytes([i, j])
+        yoloaes_decrypt(kiv)
+        if count %1000 == 0:
+            print(count)
+        count +=1
 
 
 jpgtoken = b'\xff\xd8\xff'
 pngtoken = b'\x89\x50\x4e\x47'
+image = b'\xc2\xd6'
