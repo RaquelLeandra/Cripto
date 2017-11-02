@@ -79,7 +79,7 @@ def yoloaes_decrypt( kiv):
         t = m.id_filename('./Data/goodfile.dec')
     if t != 'data':
         decrypted = decode(decrypted)
-        g = open('./Data/Decrypted/goodfile'+ str(kiv)+'.dec', 'wb').write(decrypted)
+        g = open('./Data/Decrypted/goodfile'+ str(list(kiv))+'.dec', 'wb').write(decrypted)
     return decrypted
 
 dec = yoloaes_encrpyt()
