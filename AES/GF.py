@@ -1,7 +1,13 @@
+"""
+Este file contiene parte de el código necesario para la práctica de criptografía de
+clave secreta:
+- Las operaciones de GF(2^8)
+- El AES
+"""
+
 import numpy as np
 from time import time
 from copy import copy
-import sys, hashlib, string, getpass
 from random import randint
 import os
 from Crypto.Cipher import AES as aes
@@ -86,24 +92,39 @@ def GF_invers(a):
         return exp[i]
 
 
-test = [0x02, 0x03, 0x09, 0x0B, 0x0D, 0x0E]
-tabletimeinitial = time()
-tabletime = []
-GF_tables()
-for t in test:
-    for a in range(1, 255):
-        GF_product_t(a, t)
-    tabletime.append(time() - tabletimeinitial)
+def genTables():
+    """
+    Esta función me genera las tablas que pide el ejercicio en formato latex
+    (Es cuqui :3)
+    :return:
+    """
+    print('\\begin{table}[] \n \centering \n'
+          ' \\begin{tabular}{lll} '
+          '\n Valores & Producto original & Producto con  Tablas \\\\')
+    test = [0x02, 0x03, 0x09, 0x0B, 0x0D, 0x0E]
+    tabletimeinitial = time()
+    tabletime = []
+    GF_tables()
+    for t in test:
+        for a in range(1, 255):
+            GF_product_t(a, t)
+        tabletime.append(time() - tabletimeinitial)
+        tabletimeinitial = time()
 
-prodinitialtime = time()
-prodtime = []
-for t in test:
-    for a in range(1, 255):
-        GF_product_p(a, t)
-    prodtime.append(time() - prodinitialtime)
+    prodinitialtime = time()
+    prodtime = []
+    for t in test:
+        for a in range(1, 255):
+            GF_product_p(a, t)
+        prodtime.append(time() - prodinitialtime)
+        prodinitialtime = time()
 
-print(np.sum(tabletime))
-print(np.sum(prodtime))
+    for i in range(0, len(test)):
+        print(str(test[i]) + ' & ' + str(prodtime[i]) + ' & '
+              + str(tabletime[i]) + ' \\\\')
+    print('Total & ' + str(np.sum(prodtime)) + ' & ' + str(np.sum(tabletime)) +
+          ' \n \\end{tabular}  \n \\end{table}'
+          )
 
 
 class AES:
@@ -601,19 +622,15 @@ class AES:
 
 
 def changingBytesub():
-    test = '32 43 f6 a8 88 5a 30 8d 31 31 98 a2 e0 37 07 34'
-    test = test.split()
-    M = [int(t, 16) for t in test]
-    key = '2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c'
-    key = key.split()
-    key = [int(k, 16) for k in key]
-    aes2 = AES(False, True, True)
-    C = aes2.aesEncrypt(M, key)
+    M = [50, 67, 246, 168, 136, 90, 48, 141, 49, 49, 152, 162, 224, 55, 7, 52]
+    key = [43, 126, 21, 22, 40, 174, 210, 166, 171, 247, 21, 136, 9, 207, 79, 60]
+    aes = AES(bytesub=False, shiftRow=True, mixColumn=True)
+    C = aes.aesEncrypt(M, key)
     cont = 0
     for i in range(0, 16):
         Mi = copy(M)
         Mi[i] = randint(0, 256)
-        Ci = aes2.aesEncrypt(Mi, key)
+        Ci = aes.aesEncrypt(Mi, key)
         for j in range(0, 16):
             if i == j:
                 continue
@@ -622,8 +639,8 @@ def changingBytesub():
             Mij[i] = Mi[i]
             Mj[j] = randint(0, 256)
             Mij[j] = Mj[j]
-            Cj = aes2.aesEncrypt(Mj, key)
-            Cij = aes2.aesEncrypt(Mij, key)
+            Cj = aes.aesEncrypt(Mj, key)
+            Cij = aes.aesEncrypt(Mij, key)
             cont += (np.sum(C == np.array(Ci) ^ np.array(Cj) ^ np.array(Cij)) == 16)
     if cont == 240:
         print('Para todas las permutaciones de i, j da el mismo valor')
@@ -653,6 +670,14 @@ def changingBytesub():
         # print(np.array(C).reshape(4,4))
 
 
+def printMatrix(M, i, type):
+    print('& ' + type + '_' + str(i) + ' &= \n \\begin{pmatrix}')
+    for i in range(0, 4):
+        print(str(M[i * 4 + 0]) + ' & ' + str(M[i * 4 + 1]) + ' & ' + str(M[i * 4 + 2]) + ' & ' + str(
+            M[i * 4 + 3]) + ' \\\\ ')
+    print('  \end{pmatrix}')
+
+
 def changingShiftRows():
     key = '2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c'
     key = key.split()
@@ -661,13 +686,16 @@ def changingShiftRows():
     for n in range(5):
         print('Ronda', n)
         M = [randint(0, 255) for t in range(0, 16)]
+        print(M)
+        printMatrix(M, 0, 'M')
         C = aesMod.aesEncrypt(M, key)
-        print('C', C)
-        for i in range(0, 16):
+        printMatrix(C, 0, 'C')
+        for i in [3, 5]:
             Mi = copy(M)
-            Mi[i] = randint(0, 16)
+            Mi[i] = randint(0, 255)
+            printMatrix(Mi, i, 'M')
             Ci = aesMod.aesEncrypt(Mi, key)
-            print('Ci', Ci)
+            printMatrix(Ci, i, 'C')
 
 
 def changingMixColumns():
@@ -675,54 +703,119 @@ def changingMixColumns():
     key = key.split()
     key = [int(k, 16) for k in key]
     aesMod = AES(True, True, False)
-
     for n in range(5):
         print('Ronda', n)
         M = [randint(0, 255) for t in range(0, 16)]
+        print(M)
+        printMatrix(M, 0, 'M')
         C = aesMod.aesEncrypt(M, key)
-        print('C', C)
-        for i in range(0, 16):
+        printMatrix(C, 0, 'C')
+        for i in [randint(0, 16), randint(0, 16)]:
             Mi = copy(M)
-            Mi[i] = randint(0, 16)
+            Mi[i] = randint(0, 255)
+            printMatrix(Mi, i, 'M')
             Ci = aesMod.aesEncrypt(Mi, key)
-            print('Ci', Ci)
+            printMatrix(Ci, i, 'C')
 
 
-def changeonebit(M,i):
-    newM = copy(M)
-    while newM[i] == M[i]:
-        newM[i] = randint(0,255)
-    return newM
+def bitscount(x):
+    return bin(x).count('1')
+
 
 def count_changes(Ci, C):
     c = 0
-    for i in range(0,len(C)):
-        if C[i] != Ci[i]:
-            c += 1
+    for i in range(0, len(C)):
+        x = bitscount(C[i])
+        y = bitscount(Ci[i])
+        xy = bitscount(C[i] & Ci[i])
+        c += x + y - 2 * xy
     return c
 
-def littleChanges():
+
+def littleChanges1():
     """
-    La idea de este código es crear un mensaje te tamaño 128 y hacer una estadística de que pasa
+    La idea de este código es crear un mensaje te tamaño 128 bits y hacer una estadística de que pasa
     en el mensaje encriptado si cambiamos un bit.
     :return:
     """
 
-    key = bytes([randint(0, 255) for t in range(0, 16)])
+    K = bytes([randint(0, 255) for t in range(0, 16)])
     IV = os.urandom(16)
-    cipher = AES(True,True,True)
-    originalAES = aes.new(key,aes.MODE_CBC, IV)
-    M = [randint(0, 255) for t in range(0, 128)]
+    cipher = AES(True, True, True)
+    originalAES = aes.new(K, aes.MODE_CBC, IV)
+    M = os.urandom(16)
     C = originalAES.encrypt(bytes(M))
     changes = {}
-    Mi = changeonebit(M,0)
+    Mij = list(M)
+    K = list(K)
     for i in range(1, len(M)):
-        Mi = changeonebit(Mi,i)
-        Ci = originalAES.encrypt(bytes(Mi))
-        changes[i] = count_changes(C,Ci)
-    plt.bar(list(changes.keys()), changes.values())
+        t = 1
+        for j in range(0, 8):
+            K[i] ^= t
+            originalAES = aes.new(bytes(K), aes.MODE_CBC, IV)
+            Cij = originalAES.encrypt(bytes(Mij))
+            changes[8 * i + j] = count_changes(C, Cij)
+            Mij = list(M)
+            t <<= 1
+    plt.hist(list(changes.values()), bins=30)
+    plt.title('Propagación de pequeños cambios')
+    plt.xlabel('Cantidad de cambios')
+    plt.ylabel('Veces que hay esta cantidad')
     plt.show()
 
+
+def int_to_bin_array(C):
+    newC = ''
+    for i in C:
+        aux = bin(i)
+        aux = aux[2:]
+        l = 8 - len(aux)
+        aux = '0' * l + aux
+        newC = aux + newC
+    aC = [int(t) for t in newC]
+    return aC
+
+
+def positionchanges(C, Ci, res):
+    aC = int_to_bin_array(C)
+    aCi = int_to_bin_array(Ci)
+
+    for i in range(0, len(aC)):
+        if aC[i] != aCi[i]:
+            res[i] += 1
+    return res
+
+
+def littleChanges2():
+    """
+    La idea de este código es crear un mensaje te tamaño 128 bits y hacer una estadística de que pasa
+    de las posiciones que cambian del mensaje encriptado si cambiamos un bit de la clave.
+    :return:
+    """
+
+    K = bytes([randint(0, 255) for t in range(0, 16)])
+    IV = os.urandom(16)
+    cipher = AES(True, True, True)
+    originalAES = aes.new(K, aes.MODE_CBC, IV)
+    M = os.urandom(16)
+    C = originalAES.encrypt(bytes(M))
+    changes = {}
+    Mij = list(M)
+    K = list(K)
+    res = [0] * len(M) * 8
+    for i in range(0, len(M)):
+        t = 1
+        for j in range(0, 8):
+            K[i] ^= t
+            originalAES = aes.new(bytes(K), aes.MODE_CBC, IV)
+            Cij = originalAES.encrypt(bytes(M))
+            res = positionchanges(C, Cij, res)
+            t <<= 1
+    plt.bar(range(0, len(res)), res)
+    plt.title('Propagación de pequeños cambios')
+    plt.xlabel('Posiciones')
+    plt.ylabel('Cantidad de cambios')
+    plt.show()
 
 
 def main():
@@ -749,8 +842,10 @@ def main():
     # print('dec ', decrypted)
     # print('original' , test)
     # changingBytesub()
-    # changingMixColumns()
-    littleChanges()
+    # changingShiftRows()
+    changingMixColumns()
+    # littleChanges1()
+    # littleChanges2()
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 import base64
 from Crypto import Random
-from hashlib import sha256
+import hashlib
 from Crypto.Cipher import AES
 from pkcs7 import PKCS7Encoder
 import os
@@ -49,8 +49,10 @@ def yoloaes_encrpyt():
     kiv = (os.urandom(2))
     concat = IV
     concat += kiv
-    KS = sha256(concat).hexdigest()[0:16]
-    kf = open('./Data/keyfile.key', 'w').write(KS)
+    sha256 = hashlib.sha256()
+    sha256.update(concat)
+    KS = sha256.digest()[0:16]
+    kf = open('./Data/keyfile.key', 'wb').write(KS)
     kivf = open('./Data/kivfile.key', 'wb').write(kiv)
     aes_encryptor = AES.new(KS, AES.MODE_CBC, IV)
     message = open("./Data/dec.output", 'rb').read()
@@ -64,13 +66,16 @@ def yoloaes_encrpyt():
     fp.write(result)
     return result
 
+
 def yoloaes_decrypt( kiv):
     encryptedfile = open('./Data/2017_09_26_13_22_56_raquel.leandra.perez.puerta_trasera.enc', 'rb').read()
     IV = encryptedfile[0:16]
     crytogram = encryptedfile[16:]
     concat = IV
-    concat += kiv
-    key = sha256(concat).hexdigest()[0:16]
+    concat += bytes(kiv)
+    sha256 = hashlib.sha256()
+    sha256.update(concat)
+    key = sha256.digest()[0:16]
     aes_encryptor = AES.new(key, AES.MODE_CBC, IV)
     decrypted = aes_encryptor.decrypt(crytogram)
     #decrypted = decode(decrypted)
@@ -88,15 +93,6 @@ kivf = open('./Data/kivfile.key', 'rb').read()
 t = 'data'
 count = 0
 
-def conditions(t,text):
-    if text[-1] > 16:
-        return True
-    #return t[0:4] != 'JPEG' and t[0:3] != 'PNG'
-    #if t != 'data':
-    #    return t[0:4] != 'JPEG' and t[0:3] != 'PNG'
-    return True
-
-#
 for i in range(0,255):
     for j in range(0,255):
         kiv = bytes([i, j])
