@@ -127,6 +127,9 @@ def genTables():
           )
 
 
+
+
+
 class AES:
     def __init__(self, bytesub, shiftRow, mixColumn):
         self.bytesub = bytesub
@@ -843,9 +846,12 @@ def main():
     # print('original' , test)
     # changingBytesub()
     # changingShiftRows()
-    changingMixColumns()
+    #changingMixColumns()
     # littleChanges1()
     # littleChanges2()
+    genTables()
+    a = 0x03
+    print(a, hex(GF_invers(a)))
 
 
 if __name__ == "__main__":
