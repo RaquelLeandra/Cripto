@@ -1,129 +1,9 @@
-"""
-This file contains the code of the assignment of:
-- GF(2^8) operations
-- AES
-"""
-
 import numpy as np
-from time import time
 from copy import copy
 from random import randint
 import os
 from Crypto.Cipher import AES as aes
-
 from matplotlib import pyplot as plt
-
-base = 256
-# El polinimo mínimo, en int es 283
-m = [1, 0, 0, 0, 1, 1, 0, 1, 1]
-
-
-def int_to_bin(a):
-    # Entero a lista
-    elembin = bin(a)[2:len(bin(a))]
-    return list(map(int, elembin))
-
-
-def array_to_string(a):
-    return ''.join(str(e) for e in a)
-
-
-def int_to_string(a):
-    # int to string binary
-    return bin(a)
-
-
-def bin_to_int(a):
-    # lista a entero
-    b = array_to_string(a)
-    return int(b, 2)
-
-
-def GF_product_p(a, b):
-    res = 0
-    binb = int_to_bin(b)
-    for i in range(0, len(binb)):
-        if binb[len(binb) - i - 1]:
-            res ^= a
-        if a & 128:
-            a = (a << 1) ^ 283
-        else:
-            a <<= 1
-    return res
-
-
-log = {}
-exp = {}
-
-
-def GF_tables():
-    exp[0] = 1
-    log[1] = 3
-    for i in range(1, 255):
-        a = GF_product_p(exp[i - 1], 3)
-        exp[i] = a
-        log[a] = i
-    return exp, log
-
-
-def GF_product_t(a, b):
-    if len(log) == 0:
-        GF_tables()
-    i = log[a]
-    j = log[b]
-    return exp[((i + j) % 255)]
-
-
-def GF_generator():
-    gen = []
-    for i in range(0, 255):
-        if i % 2:
-            gen.append(i)
-    return gen
-
-
-def GF_invers(a):
-    if a == 0:
-        return a
-    else:
-        i = log[a]
-        i = 255 - i
-        return exp[i]
-
-
-def genTables():
-    """
-    Esta función me genera las tablas que pide el ejercicio en formato latex
-    (Es cuqui :3)
-    :return:
-    """
-    print('\\begin{table}[] \n \centering \n'
-          ' \\begin{tabular}{lll} '
-          '\n Valores & Producto original & Producto con  Tablas \\\\')
-    test = [0x02, 0x03, 0x09, 0x0B, 0x0D, 0x0E]
-    tabletimeinitial = time()
-    tabletime = []
-    GF_tables()
-    for t in test:
-        for a in range(1, 255):
-            GF_product_t(a, t)
-        tabletime.append(time() - tabletimeinitial)
-        tabletimeinitial = time()
-
-    prodinitialtime = time()
-    prodtime = []
-    for t in test:
-        for a in range(1, 255):
-            GF_product_p(a, t)
-        prodtime.append(time() - prodinitialtime)
-        prodinitialtime = time()
-
-    for i in range(0, len(test)):
-        print(str(test[i]) + ' & ' + str(prodtime[i]) + ' & '
-              + str(tabletime[i]) + ' \\\\')
-    print('Total & ' + str(np.sum(prodtime)) + ' & ' + str(np.sum(tabletime)) +
-          ' \n \\end{tabular}  \n \\end{table}'
-          )
 
 
 class AES:
@@ -816,7 +696,5 @@ def main():
     print('decripted ', decrypted)
 
 
-
 if __name__ == "__main__":
     main()
-
